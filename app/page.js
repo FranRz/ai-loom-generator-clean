@@ -4,54 +4,42 @@ import { useState } from "react";
 export default function Home() {
   const [url, setUrl] = useState("");
   const [name, setName] = useState("");
-  const [style, setStyle] = useState("optimized");
   const [output, setOutput] = useState("");
+  const [guide, setGuide] = useState("");
+  const [prompts, setPrompts] = useState(null);
 
   const generate = async () => {
-    try {
-      if (!url) {
-        setOutput("Please enter a URL");
-        return;
-      }
+    setOutput("Generating...");
+    setGuide("");
 
-      setOutput("Generating...");
+    const res1 = await fetch("/api/extract", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({url})
+    });
 
-      const res1 = await fetch("/api/extract", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url })
-      });
+    const data1 = await res1.json();
 
-      const data1 = await res1.json();
+    const res2 = await fetch("/api/script", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({
+        url,
+        name,
+        niche: data1.niche,
+        location: data1.location
+      })
+    });
 
-      const res2 = await fetch("/api/script", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url,
-          name,
-          style,
-          niche: data1.niche,
-          location: data1.location
-        })
-      });
+    const data2 = await res2.json();
 
-      const text = await res2.text();
-
-      try {
-        const data2 = JSON.parse(text);
-        setOutput(data2.script || JSON.stringify(data2, null, 2));
-      } catch {
-        setOutput("RAW RESPONSE:\n" + text);
-      }
-
-    } catch (err) {
-      setOutput("ERROR: " + err.message);
-    }
+    setOutput(data2.script);
+    setGuide(data2.loomGuide);
+    setPrompts(data2.prompts);
   };
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(output);
+  const copy = (text) => {
+    navigator.clipboard.writeText(text);
   };
 
   return (
@@ -59,44 +47,47 @@ export default function Home() {
       <h1>AI Loom Generator</h1>
 
       <input
+        placeholder="Website URL"
         value={url}
-        onChange={(e) => setUrl(e.target.value)}
-        placeholder="Paste company URL..."
-        style={{ width: "300px", padding: "5px" }}
+        onChange={(e)=>setUrl(e.target.value)}
       />
 
-      <br /><br />
+      <br/><br/>
 
       <input
+        placeholder="Lead Name"
         value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="Lead name (optional)"
-        style={{ width: "300px", padding: "5px" }}
+        onChange={(e)=>setName(e.target.value)}
       />
 
-      <br /><br />
+      <br/><br/>
 
-      <select value={style} onChange={(e) => setStyle(e.target.value)}>
-        <option value="safe">Safe</option>
-        <option value="optimized">Optimized (recommended)</option>
-        <option value="aggressive">Aggressive</option>
-      </select>
+      <button onClick={generate}>Generate</button>
 
-      <br /><br />
+      <br/><br/>
 
-      <button onClick={generate}>
-        Generate
-      </button>
+      <h3>🎬 Script</h3>
+      <pre>{output}</pre>
+      <button onClick={()=>copy(output)}>Copy Script</button>
 
-      <button onClick={copyToClipboard} style={{ marginLeft: 10 }}>
-        Copy
-      </button>
+      <br/><br/>
 
-      <br /><br />
+      <h3>🎥 Loom Guide</h3>
+      <pre>{guide}</pre>
 
-      <pre style={{ whiteSpace: "pre-wrap" }}>
-        {output}
-      </pre>
+      <br/><br/>
+
+      {prompts && (
+        <>
+          <h3>🔍 Prompts</h3>
+
+          <p><strong>Search:</strong> {prompts.search}</p>
+          <button onClick={()=>copy(prompts.search)}>Copy</button>
+
+          <p><strong>Inclusion:</strong> {prompts.inclusion}</p>
+          <button onClick={()=>copy(prompts.inclusion)}>Copy</button>
+        </>
+      )}
     </div>
   );
 }
