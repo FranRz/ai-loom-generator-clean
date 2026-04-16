@@ -1,41 +1,52 @@
 export async function POST(req) {
-  const { url, niche, location } = await req.json();
+  try {
+    const { url, niche, location } = await req.json();
 
-  const prompt = `
-  Create a Loom script (60-90 seconds).
+    const prompt = `Create a Loom script for:
+Website: ${url}
+Niche: ${niche}
+Location: ${location}`;
 
-  Context:
-  - Website: ${url}
-  - Niche: ${niche}
-  - Location: ${location}
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4.1-mini",
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
 
-  Structure:
-  1. Hook (personalized)
-  2. Show they are not listed
-  3. Confirm they could be listed
-  4. Explain domain authority
-  5. Missed opportunity
-  6. CTA
+    const text = await response.text(); // 👈 CLAVE
 
-  Include subtle visual cues like:
-  (show results), (highlight competitors), (pause)
-  `;
+    // 👇 DEBUG: siempre devuelve algo
+    try {
+      const data = JSON.parse(text);
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      messages: [{ role: "user", content: prompt }]
-    })
-  });
+      if (!response.ok) {
+        return Response.json({
+          error: "OpenAI error",
+          details: data
+        });
+      }
 
-  const data = await response.json();
+      const script = data.choices?.[0]?.message?.content;
 
-  const script = data.choices?.[0]?.message?.content || "Error generating script";
+      return Response.json({ script });
 
-  return Response.json({ script });
+    } catch (parseError) {
+      return Response.json({
+        error: "Invalid JSON from OpenAI",
+        raw: text
+      });
+    }
+
+  } catch (err) {
+    return Response.json({
+      error: "Server crash",
+      message: err.message
+    });
+  }
 }
