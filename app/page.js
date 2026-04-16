@@ -3,54 +3,78 @@ import { useState } from "react";
 
 export default function Home() {
   const [url, setUrl] = useState("");
-  const [output, setOutput] = useState(null);
+  const [output, setOutput] = useState("");
 
-const generate = async () => {
-  try {
-    if (!url) return;
+  const generate = async () => {
+    try {
+      if (!url) {
+        setOutput("Please enter a URL");
+        return;
+      }
 
-    const res1 = await fetch("/api/extract", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({url})
-    });
+      // Step 1: get niche + location
+      const res1 = await fetch("/api/extract", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url })
+      });
 
-    const data1 = await res1.json();
+      const data1 = await res1.json();
 
-    const res2 = await fetch("/api/script", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({url, ...data1})
-    });
+      // Step 2: generate script
+      const res2 = await fetch("/api/script", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url,
+          niche: data1.niche,
+          location: data1.location
+        })
+      });
 
-    const data2 = await res2.json();
+      // 👇 usamos text para evitar crash
+      const text = await res2.text();
 
-    console.log("RESPONSE:", data2);
+      try {
+        const data2 = JSON.parse(text);
 
-    setOutput(data2.script || JSON.stringify(data2));
-  } catch (err) {
-    console.error("ERROR:", err);
-    setOutput("Error: " + err.message);
-  }
-};
+        if (data2.error) {
+          setOutput("ERROR:\n" + JSON.stringify(data2, null, 2));
+        } else {
+          setOutput(data2.script);
+        }
+
+      } catch {
+        setOutput("RAW RESPONSE:\n" + text);
+      }
+
+    } catch (err) {
+      setOutput("ERROR: " + err.message);
+    }
+  };
 
   return (
-    <div style={{padding:20}}>
+    <div style={{ padding: 20 }}>
       <h1>AI Loom Generator</h1>
 
-      <input 
+      <input
         value={url}
-        onChange={(e)=>setUrl(e.target.value)}
+        onChange={(e) => setUrl(e.target.value)}
         placeholder="Paste company URL..."
+        style={{ width: "300px", padding: "5px" }}
       />
 
-      <br/><br/>
+      <br /><br />
 
-      <button onClick={generate}>Generate</button>
+      <button onClick={generate}>
+        Generate
+      </button>
 
-      <br/><br/>
+      <br /><br />
 
-      {output && <pre>{output}</pre>}
+      <pre style={{ whiteSpace: "pre-wrap" }}>
+        {output}
+      </pre>
     </div>
   );
 }
