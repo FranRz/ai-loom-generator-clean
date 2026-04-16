@@ -2,10 +2,51 @@ export async function POST(req) {
   try {
     const { url, niche, location } = await req.json();
 
-    const prompt = `Create a Loom script for:
-Website: ${url}
-Niche: ${niche}
-Location: ${location}`;
+    const prompt = `
+You are an appointment setter creating a Loom video script.
+
+STRICT RULES:
+- Follow this exact structure
+- Keep it short (60-90 seconds)
+- Make it sound natural, not robotic
+- Focus on AI search visibility (ChatGPT)
+- Do NOT create a generic company intro
+
+Context:
+- Website: ${url}
+- Niche: ${niche}
+- Location: ${location}
+
+SCRIPT STRUCTURE:
+
+1. Start like:
+"Hey [Name], [Your Name] here — I just ran a quick ChatGPT search..."
+
+2. Show search:
+Explain that you searched for their service in their location
+
+3. Highlight problem:
+Say they are NOT being recommended, but competitors are
+
+4. Second prompt insight:
+Explain that ChatGPT says they COULD be mentioned
+
+5. Insight:
+Explain that the issue is domain authority / visibility
+
+6. Opportunity:
+Mention they are missing inbound opportunities
+
+7. CTA:
+Offer to show how to fix it and suggest booking a call
+
+IMPORTANT:
+- Keep it conversational
+- No bullet points
+- No markdown
+- No generic marketing language
+- Make it feel like a real Loom recording
+`;
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -15,13 +56,16 @@ Location: ${location}`;
       },
       body: JSON.stringify({
         model: "gpt-4.1-mini",
-        messages: [{ role: "user", content: prompt }]
+        messages: [
+          { role: "system", content: "You are a high-performing appointment setter." },
+          { role: "user", content: prompt }
+        ]
       })
     });
 
-    const text = await response.text(); // 👈 CLAVE
+    const text = await response.text();
 
-    // 👇 DEBUG: siempre devuelve algo
+    // Intentar parsear la respuesta
     try {
       const data = JSON.parse(text);
 
