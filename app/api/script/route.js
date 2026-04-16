@@ -2,128 +2,74 @@ export async function POST(req) {
   try {
     const { url, niche, location, name, style } = await req.json();
 
-    let styleInstruction = "";
-
-    if (style === "safe") {
-      styleInstruction = `
-Keep very close to the original framework.
-Do not add pressure.
-Keep it neutral and informative.
+    const baseContext = `
+Website: ${url}
+Niche: ${niche}
+Location: ${location}
+Name: ${name || "there"}
 `;
-    }
 
-    if (style === "optimized") {
-      styleInstruction = `
-Make it more persuasive by:
-- Clearly contrasting them with competitors
-- Highlighting lost opportunities
-- Creating light urgency without sounding pushy
-- Making the CTA feel specific and valuable
+    // 🔥 DEFAULT OPTIMIZED PRO
+    const optimizedPrompt = `
+You are an elite appointment setter.
 
-Include a line that implies competitors are getting their potential clients.
-`;
-    }
+Write a Loom script (60-90 sec), natural tone.
 
-    if (style === "aggressive") {
-      styleInstruction = `
-Make it direct and high-impact:
-- Strong competitor contrast
-- Emphasize they are losing business
-- Increase urgency
-- Make CTA feel like a missed opportunity if ignored
-`;
-    }
+${baseContext}
 
-    const prompt = `
-You are a high-performing appointment setter creating a Loom video script.
+Structure:
+- Start: "Hey ${name || "there"}, this is Francisco..."
+- Show search (show results)
+- Competitors ARE showing, they are NOT (highlight competitors)
+- Say: people are going to competitors instead
+- Scroll → say they COULD be included
+- Explain: visibility / authority issue
+- Explain lost inbound leads
+- CTA: show how to fix it
 
-STRICT RULES:
-- 60-90 seconds max
-- Conversational tone
+IMPORTANT:
+- Conversational
+- No fluff
 - No bullet points
-- No markdown
-- Sound like a real human recording a Loom
-
-Context:
-- Website: ${url}
-- Niche: ${niche}
-- Location: ${location}
-- Prospect name: ${name || "there"}
-
-SCRIPT:
-
-Start like:
-"Hey ${name || "there"}, this is Francisco — I just ran a quick ChatGPT search..."
-
-Then:
-
-- Say you searched for their service in their location (show results)
-
-- Say competitors ARE showing up but they are NOT
-(make this contrast clear)
-
-- Add this idea naturally:
-"which usually means people looking for your service are going to them instead"
-
-- Mention ChatGPT says they COULD be included (scroll)
-
-- Explain the issue:
-domain authority / visibility
-
-- Explain the opportunity:
-they are missing inbound leads
-
-- CTA:
-"If you want, I can show you exactly what’s causing this and how to fix it so you start showing up in these searches."
-
-VISUAL CUES:
-Include naturally:
-(show results)
-(highlight competitors)
-(scroll)
-(pause)
-
-STYLE:
-${styleInstruction}
+- Real Loom tone
 `;
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-4.1-mini",
-        messages: [
-          { role: "system", content: "You are an elite appointment setter." },
-          { role: "user", content: prompt }
-        ]
-      })
-    });
+    // 🔥 VARIATION B (más presión ligera)
+    const variationBPrompt = `
+You are an elite appointment setter.
 
-    const text = await response.text();
+Write a Loom script (60-90 sec), slightly more direct.
 
-    try {
-      const data = JSON.parse(text);
+${baseContext}
 
-      if (!response.ok) {
-        return Response.json({
-          error: "OpenAI error",
-          details: data
-        });
-      }
+Structure:
+- Same as above
+- Add more urgency
+- Emphasize competitors taking opportunities
+- Make impact stronger but NOT pushy
 
-      const script = data.choices?.[0]?.message?.content;
+IMPORTANT:
+- Still natural
+- No aggressive sales tone
+`;
 
-      return Response.json({ script });
+    // 👉 si es AB mode
+    if (style === "ab") {
+      const responses = await Promise.all([
+        fetchOpenAI(optimizedPrompt),
+        fetchOpenAI(variationBPrompt)
+      ]);
 
-    } catch {
       return Response.json({
-        error: "Invalid JSON",
-        raw: text
+        scriptA: responses[0],
+        scriptB: responses[1]
       });
     }
+
+    // 👉 default = optimized pro
+    const script = await fetchOpenAI(optimizedPrompt);
+
+    return Response.json({ script });
 
   } catch (err) {
     return Response.json({
@@ -131,4 +77,26 @@ ${styleInstruction}
       message: err.message
     });
   }
+}
+
+
+// 🔧 helper reutilizable
+async function fetchOpenAI(prompt) {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: "gpt-4.1-mini",
+      messages: [
+        { role: "system", content: "You are a high-performing appointment setter." },
+        { role: "user", content: prompt }
+      ]
+    })
+  });
+
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content || "Error generating";
 }
