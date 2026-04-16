@@ -11,15 +11,24 @@ Location: ${location}
 Name: ${person}
 `;
 
-    const prompt = `
+    // 🔥 BASE PROMPT (con tu identidad real)
+    const basePrompt = `
 You are an elite appointment setter.
 
 Write a Loom script (60-90 sec), natural tone.
 
 ${baseContext}
 
-Structure:
-- Start: "Hey ${person}, this is Francisco..."
+IMPORTANT:
+- Start EXACTLY like:
+"Hey ${person}, Francisco from Endolead here — I just ran a quick ChatGPT search..."
+
+- Conversational tone
+- No bullet points
+- No generic marketing language
+- Sound human
+
+STRUCTURE:
 - Show search (show results)
 - Competitors ARE showing, they are NOT (highlight competitors)
 - Say: people are going to competitors instead
@@ -27,84 +36,57 @@ Structure:
 - Explain: visibility / authority issue
 - Explain lost inbound leads
 - CTA: show how to fix it
-
-IMPORTANT:
-- Conversational
-- No fluff
-- No bullet points
 `;
 
-    const script = await fetchOpenAI(prompt);
+    // 🎛 STYLE VARIATIONS
+    const styles = {
+      safe: `
+Keep it neutral, low pressure, informative.
+`,
+      optimized: `
+Make it persuasive:
+- Clear competitor contrast
+- Mention lost opportunities
+- Light urgency
+`,
+      aggressive: `
+Make it direct:
+- Strong urgency
+- Emphasize lost business
+- Still avoid sounding spammy
+`
+    };
 
-    // 🔥 GENERATE LOOM GUIDE
-    const searchQuery = `best ${niche} in ${location}`;
-    const inclusionQuery = `Could ${url} be recommended as one of the top ${niche} in ${location}?`;
+    // 🧪 A/B MODE
+    if (style === "ab") {
+      const scriptA = await fetchOpenAI(basePrompt + styles.optimized);
+      const scriptB = await fetchOpenAI(basePrompt + styles.aggressive);
 
-    const loomGuide = `
---- LOOM GUIDE ---
+      return Response.json({
+        scriptA,
+        scriptB,
+        ...generateGuide(url, niche, location)
+      });
+    }
 
-STEP 1 (SHOW SEARCH)
-Search in ChatGPT:
-"${searchQuery}"
-
-Say:
-"I ran this search to see which companies show up..."
-
-(show results)
-
-STEP 2 (COMPETITORS)
-Highlight competitors in results
-
-Say:
-"These companies are showing up here..."
-
-(highlight competitors)
-
-STEP 3 (PROBLEM)
-Say:
-"But your company isn’t showing up at all..."
-
-(pause)
-
-STEP 4 (SECOND SEARCH)
-Search:
-"${inclusionQuery}"
-
-(scroll)
-
-STEP 5 (INSIGHT)
-Say:
-"ChatGPT actually says you could be included..."
-
-STEP 6 (EXPLANATION)
-Say:
-"This usually comes down to domain authority and visibility..."
-
-STEP 7 (CTA)
-Say:
-"If you want, I can show you exactly how to fix this..."
-`;
+    // 🎯 SINGLE MODE
+    const finalPrompt = basePrompt + (styles[style] || styles.optimized);
+    const script = await fetchOpenAI(finalPrompt);
 
     return Response.json({
       script,
-      loomGuide,
-      prompts: {
-        search: searchQuery,
-        inclusion: inclusionQuery
-      }
+      ...generateGuide(url, niche, location)
     });
 
   } catch (err) {
-    return Response.json({
-      error: err.message
-    });
+    return Response.json({ error: err.message });
   }
 }
 
 
-// helper
+// 🔧 OPENAI CALL
 async function fetchOpenAI(prompt) {
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -119,6 +101,43 @@ async function fetchOpenAI(prompt) {
     })
   });
 
-  const data = await response.json();
+  const data = await res.json();
   return data.choices?.[0]?.message?.content || "Error";
+}
+
+
+// 🎬 LOOM GUIDE GENERATOR
+function generateGuide(url, niche, location) {
+  const searchQuery = `best ${niche} in ${location}`;
+  const inclusionQuery = `Should ${url} be listed as a top ${niche} in ${location}?`;
+
+  return {
+    loomGuide: `
+STEP 1:
+Search: "${searchQuery}"
+(show results)
+
+STEP 2:
+Highlight competitors
+(highlight competitors)
+
+STEP 3:
+Pause and say they are not showing
+(pause)
+
+STEP 4:
+Search: "${inclusionQuery}"
+(scroll)
+
+STEP 5:
+Explain insight
+
+STEP 6:
+Transition to CTA
+`,
+    prompts: {
+      search: searchQuery,
+      inclusion: inclusionQuery
+    }
+  };
 }
