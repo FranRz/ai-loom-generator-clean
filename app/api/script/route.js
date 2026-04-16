@@ -5,32 +5,44 @@ export async function POST(req) {
     let styleInstruction = "";
 
     if (style === "safe") {
-      styleInstruction = "Keep very close to the original framework.";
+      styleInstruction = `
+Keep very close to the original framework.
+Do not add pressure.
+Keep it neutral and informative.
+`;
     }
 
     if (style === "optimized") {
       styleInstruction = `
-      Improve clarity, make it more natural, and slightly more persuasive.
-      Add light competitor framing.
-      `;
+Make it more persuasive by:
+- Clearly contrasting them with competitors
+- Highlighting lost opportunities
+- Creating light urgency without sounding pushy
+- Making the CTA feel specific and valuable
+
+Include a line that implies competitors are getting their potential clients.
+`;
     }
 
     if (style === "aggressive") {
       styleInstruction = `
-      Make it more direct and impactful.
-      Emphasize competitors taking their opportunities.
-      Increase urgency.
-      `;
+Make it direct and high-impact:
+- Strong competitor contrast
+- Emphasize they are losing business
+- Increase urgency
+- Make CTA feel like a missed opportunity if ignored
+`;
     }
 
     const prompt = `
-You are an appointment setter creating a Loom video script.
+You are a high-performing appointment setter creating a Loom video script.
 
 STRICT RULES:
-- Keep it 60-90 seconds
+- 60-90 seconds max
 - Conversational tone
 - No bullet points
 - No markdown
+- Sound like a real human recording a Loom
 
 Context:
 - Website: ${url}
@@ -38,34 +50,38 @@ Context:
 - Location: ${location}
 - Prospect name: ${name || "there"}
 
-STRUCTURE:
+SCRIPT:
 
 Start like:
 "Hey ${name || "there"}, this is Francisco — I just ran a quick ChatGPT search..."
 
 Then:
 
-1. Say you searched for their service in their location
-   (show screen)
+- Say you searched for their service in their location (show results)
 
-2. Explain competitors are showing up but they are not
-   (highlight competitors)
+- Say competitors ARE showing up but they are NOT
+(make this contrast clear)
 
-3. Mention ChatGPT says they COULD be included
-   (scroll slightly)
+- Add this idea naturally:
+"which usually means people looking for your service are going to them instead"
 
-4. Explain issue = domain authority / visibility
+- Mention ChatGPT says they COULD be included (scroll)
 
-5. Explain missed opportunity (lost inbound leads)
+- Explain the issue:
+domain authority / visibility
 
-6. CTA:
-Offer to show how to fix it and suggest booking a call
+- Explain the opportunity:
+they are missing inbound leads
+
+- CTA:
+"If you want, I can show you exactly what’s causing this and how to fix it so you start showing up in these searches."
 
 VISUAL CUES:
-- (show results)
-- (highlight competitors)
-- (pause)
-- (scroll)
+Include naturally:
+(show results)
+(highlight competitors)
+(scroll)
+(pause)
 
 STYLE:
 ${styleInstruction}
@@ -80,7 +96,7 @@ ${styleInstruction}
       body: JSON.stringify({
         model: "gpt-4.1-mini",
         messages: [
-          { role: "system", content: "You are a high-performing appointment setter." },
+          { role: "system", content: "You are an elite appointment setter." },
           { role: "user", content: prompt }
         ]
       })
