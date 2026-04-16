@@ -4,7 +4,7 @@ import { useState } from "react";
 export default function Home() {
   const [url, setUrl] = useState("");
   const [name, setName] = useState("");
-  const [style, setStyle] = useState("safe");
+  const [style, setStyle] = useState("optimized");
   const [output, setOutput] = useState("");
 
   const generate = async () => {
@@ -13,6 +13,8 @@ export default function Home() {
         setOutput("Please enter a URL");
         return;
       }
+
+      setOutput("Generating...");
 
       const res1 = await fetch("/api/extract", {
         method: "POST",
@@ -48,6 +50,10 @@ export default function Home() {
     }
   };
 
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(output);
+  };
+
   return (
     <div style={{ padding: 20 }}>
       <h1>AI Loom Generator</h1>
@@ -71,8 +77,8 @@ export default function Home() {
       <br /><br />
 
       <select value={style} onChange={(e) => setStyle(e.target.value)}>
-        <option value="safe">Safe (Framework)</option>
-        <option value="optimized">Optimized</option>
+        <option value="safe">Safe</option>
+        <option value="optimized">Optimized (recommended)</option>
         <option value="aggressive">Aggressive</option>
       </select>
 
@@ -80,6 +86,10 @@ export default function Home() {
 
       <button onClick={generate}>
         Generate
+      </button>
+
+      <button onClick={copyToClipboard} style={{ marginLeft: 10 }}>
+        Copy
       </button>
 
       <br /><br />
