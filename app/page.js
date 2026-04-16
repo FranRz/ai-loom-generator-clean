@@ -3,6 +3,8 @@ import { useState } from "react";
 
 export default function Home() {
   const [url, setUrl] = useState("");
+  const [name, setName] = useState("");
+  const [style, setStyle] = useState("safe");
   const [output, setOutput] = useState("");
 
   const generate = async () => {
@@ -12,7 +14,6 @@ export default function Home() {
         return;
       }
 
-      // Step 1: get niche + location
       const res1 = await fetch("/api/extract", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -21,29 +22,23 @@ export default function Home() {
 
       const data1 = await res1.json();
 
-      // Step 2: generate script
       const res2 = await fetch("/api/script", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           url,
+          name,
+          style,
           niche: data1.niche,
           location: data1.location
         })
       });
 
-      // 👇 usamos text para evitar crash
       const text = await res2.text();
 
       try {
         const data2 = JSON.parse(text);
-
-        if (data2.error) {
-          setOutput("ERROR:\n" + JSON.stringify(data2, null, 2));
-        } else {
-          setOutput(data2.script);
-        }
-
+        setOutput(data2.script || JSON.stringify(data2, null, 2));
       } catch {
         setOutput("RAW RESPONSE:\n" + text);
       }
@@ -63,6 +58,23 @@ export default function Home() {
         placeholder="Paste company URL..."
         style={{ width: "300px", padding: "5px" }}
       />
+
+      <br /><br />
+
+      <input
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Lead name (optional)"
+        style={{ width: "300px", padding: "5px" }}
+      />
+
+      <br /><br />
+
+      <select value={style} onChange={(e) => setStyle(e.target.value)}>
+        <option value="safe">Safe (Framework)</option>
+        <option value="optimized">Optimized</option>
+        <option value="aggressive">Aggressive</option>
+      </select>
 
       <br /><br />
 
