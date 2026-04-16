@@ -2,15 +2,16 @@ export async function POST(req) {
   try {
     const { url, niche, location, name, style } = await req.json();
 
+    const person = name || "there";
+
     const baseContext = `
 Website: ${url}
 Niche: ${niche}
 Location: ${location}
-Name: ${name || "there"}
+Name: ${person}
 `;
 
-    // 🔥 DEFAULT OPTIMIZED PRO
-    const optimizedPrompt = `
+    const prompt = `
 You are an elite appointment setter.
 
 Write a Loom script (60-90 sec), natural tone.
@@ -18,7 +19,7 @@ Write a Loom script (60-90 sec), natural tone.
 ${baseContext}
 
 Structure:
-- Start: "Hey ${name || "there"}, this is Francisco..."
+- Start: "Hey ${person}, this is Francisco..."
 - Show search (show results)
 - Competitors ARE showing, they are NOT (highlight competitors)
 - Say: people are going to competitors instead
@@ -31,56 +32,77 @@ IMPORTANT:
 - Conversational
 - No fluff
 - No bullet points
-- Real Loom tone
 `;
 
-    // 🔥 VARIATION B (más presión ligera)
-    const variationBPrompt = `
-You are an elite appointment setter.
+    const script = await fetchOpenAI(prompt);
 
-Write a Loom script (60-90 sec), slightly more direct.
+    // 🔥 GENERATE LOOM GUIDE
+    const searchQuery = `best ${niche} in ${location}`;
+    const inclusionQuery = `Could ${url} be recommended as one of the top ${niche} in ${location}?`;
 
-${baseContext}
+    const loomGuide = `
+--- LOOM GUIDE ---
 
-Structure:
-- Same as above
-- Add more urgency
-- Emphasize competitors taking opportunities
-- Make impact stronger but NOT pushy
+STEP 1 (SHOW SEARCH)
+Search in ChatGPT:
+"${searchQuery}"
 
-IMPORTANT:
-- Still natural
-- No aggressive sales tone
+Say:
+"I ran this search to see which companies show up..."
+
+(show results)
+
+STEP 2 (COMPETITORS)
+Highlight competitors in results
+
+Say:
+"These companies are showing up here..."
+
+(highlight competitors)
+
+STEP 3 (PROBLEM)
+Say:
+"But your company isn’t showing up at all..."
+
+(pause)
+
+STEP 4 (SECOND SEARCH)
+Search:
+"${inclusionQuery}"
+
+(scroll)
+
+STEP 5 (INSIGHT)
+Say:
+"ChatGPT actually says you could be included..."
+
+STEP 6 (EXPLANATION)
+Say:
+"This usually comes down to domain authority and visibility..."
+
+STEP 7 (CTA)
+Say:
+"If you want, I can show you exactly how to fix this..."
 `;
 
-    // 👉 si es AB mode
-    if (style === "ab") {
-      const responses = await Promise.all([
-        fetchOpenAI(optimizedPrompt),
-        fetchOpenAI(variationBPrompt)
-      ]);
-
-      return Response.json({
-        scriptA: responses[0],
-        scriptB: responses[1]
-      });
-    }
-
-    // 👉 default = optimized pro
-    const script = await fetchOpenAI(optimizedPrompt);
-
-    return Response.json({ script });
+    return Response.json({
+      script,
+      loomGuide,
+      prompts: {
+        search: searchQuery,
+        inclusion: inclusionQuery
+      }
+    });
 
   } catch (err) {
     return Response.json({
-      error: "Server crash",
-      message: err.message
+      error: err.message
     });
   }
 }
 
 
-// 🔧 helper reutilizable
+// helper
 async function fetchOpenAI(prompt) {
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -98,5 +120,5 @@ async function fetchOpenAI(prompt) {
   });
 
   const data = await response.json();
-  return data.choices?.[0]?.message?.content || "Error generating";
+  return data.choices?.[0]?.message?.content || "Error";
 }
