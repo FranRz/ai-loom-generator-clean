@@ -11,7 +11,7 @@ Location: ${location}
 Name: ${person}
 `;
 
-    // 🔥 BASE PROMPT (con tu identidad real)
+    // 🎯 BASE STRUCTURE
     const basePrompt = `
 You are an elite appointment setter.
 
@@ -23,7 +23,7 @@ IMPORTANT:
 - Start EXACTLY like:
 "Hey ${person}, Francisco from Endolead here — I just ran a quick ChatGPT search..."
 
-- Conversational tone
+- Conversational
 - No bullet points
 - No generic marketing language
 - Sound human
@@ -35,25 +35,38 @@ STRUCTURE:
 - Scroll → say they COULD be included
 - Explain: visibility / authority issue
 - Explain lost inbound leads
-- CTA: show how to fix it
 `;
 
-    // 🎛 STYLE VARIATIONS
+    // 🎛 STYLE VARIATIONS (con SYSTEM integrado)
     const styles = {
       safe: `
-Keep it neutral, low pressure, informative.
+Introduce the system softly:
+"That’s actually something we help with through our AI Search Visibility System..."
+
+Keep it natural and low pressure.
+
+CTA:
+"If you want, I can walk you through how it works."
 `,
+
       optimized: `
-Make it persuasive:
-- Clear competitor contrast
-- Mention lost opportunities
-- Light urgency
+Introduce the system clearly:
+"That’s actually what we fix with our AI Search Visibility System — helping companies show up in these AI-driven searches."
+
+Add light urgency and opportunity framing.
+
+CTA:
+"If you want, I can show you exactly how it works and what it would look like for you."
 `,
+
       aggressive: `
-Make it direct:
-- Strong urgency
-- Emphasize lost business
-- Still avoid sounding spammy
+Introduce the system with impact:
+"This is exactly what we solve with our AI Search Visibility System — helping companies stop losing these opportunities and start showing up where it matters."
+
+Emphasize missed opportunities and urgency.
+
+CTA:
+"If you want, I can show you exactly how this works and how quickly we can start turning this around."
 `
     };
 
@@ -79,7 +92,10 @@ Make it direct:
     });
 
   } catch (err) {
-    return Response.json({ error: err.message });
+    return Response.json({
+      error: "Server crash",
+      message: err.message
+    });
   }
 }
 
@@ -102,11 +118,11 @@ async function fetchOpenAI(prompt) {
   });
 
   const data = await res.json();
-  return data.choices?.[0]?.message?.content || "Error";
+  return data.choices?.[0]?.message?.content || "Error generating script";
 }
 
 
-// 🎬 LOOM GUIDE GENERATOR
+// 🎬 LOOM GUIDE
 function generateGuide(url, niche, location) {
   const searchQuery = `best ${niche} in ${location}`;
   const inclusionQuery = `Should ${url} be listed as a top ${niche} in ${location}?`;
@@ -133,7 +149,7 @@ STEP 5:
 Explain insight
 
 STEP 6:
-Transition to CTA
+Introduce system + CTA
 `,
     prompts: {
       search: searchQuery,
