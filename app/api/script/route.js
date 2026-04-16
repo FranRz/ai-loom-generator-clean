@@ -10,7 +10,7 @@ export async function POST(req) {
   - Location: ${location}
 
   Structure:
-  1. Hook
+  1. Hook (personalized)
   2. Show they are not listed
   3. Confirm they could be listed
   4. Explain domain authority
@@ -24,7 +24,7 @@ export async function POST(req) {
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
@@ -34,7 +34,8 @@ export async function POST(req) {
   });
 
   const data = await response.json();
-  const script = data.choices[0].message.content;
+
+  const script = data.choices?.[0]?.message?.content || "Error generating script";
 
   return Response.json({ script });
 }
