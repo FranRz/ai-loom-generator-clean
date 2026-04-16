@@ -41,7 +41,7 @@ Context:
 STRUCTURE:
 
 Start like:
-"Hey ${name || "there"}, this is [Your Name] — I just ran a quick ChatGPT search..."
+"Hey ${name || "there"}, this is Francisco — I just ran a quick ChatGPT search..."
 
 Then:
 
