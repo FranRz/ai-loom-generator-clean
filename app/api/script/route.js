@@ -1,51 +1,74 @@
 export async function POST(req) {
   try {
-    const { url, niche, location } = await req.json();
+    const { url, niche, location, name, style } = await req.json();
+
+    let styleInstruction = "";
+
+    if (style === "safe") {
+      styleInstruction = "Keep very close to the original framework.";
+    }
+
+    if (style === "optimized") {
+      styleInstruction = `
+      Improve clarity, make it more natural, and slightly more persuasive.
+      Add light competitor framing.
+      `;
+    }
+
+    if (style === "aggressive") {
+      styleInstruction = `
+      Make it more direct and impactful.
+      Emphasize competitors taking their opportunities.
+      Increase urgency.
+      `;
+    }
 
     const prompt = `
 You are an appointment setter creating a Loom video script.
 
 STRICT RULES:
-- Follow this exact structure
-- Keep it short (60-90 seconds)
-- Make it sound natural, not robotic
-- Focus on AI search visibility (ChatGPT)
-- Do NOT create a generic company intro
+- Keep it 60-90 seconds
+- Conversational tone
+- No bullet points
+- No markdown
 
 Context:
 - Website: ${url}
 - Niche: ${niche}
 - Location: ${location}
+- Prospect name: ${name || "there"}
 
-SCRIPT STRUCTURE:
+STRUCTURE:
 
-1. Start like:
-"Hey [Name], [Your Name] here — I just ran a quick ChatGPT search..."
+Start like:
+"Hey ${name || "there"}, this is [Your Name] — I just ran a quick ChatGPT search..."
 
-2. Show search:
-Explain that you searched for their service in their location
+Then:
 
-3. Highlight problem:
-Say they are NOT being recommended, but competitors are
+1. Say you searched for their service in their location
+   (show screen)
 
-4. Second prompt insight:
-Explain that ChatGPT says they COULD be mentioned
+2. Explain competitors are showing up but they are not
+   (highlight competitors)
 
-5. Insight:
-Explain that the issue is domain authority / visibility
+3. Mention ChatGPT says they COULD be included
+   (scroll slightly)
 
-6. Opportunity:
-Mention they are missing inbound opportunities
+4. Explain issue = domain authority / visibility
 
-7. CTA:
+5. Explain missed opportunity (lost inbound leads)
+
+6. CTA:
 Offer to show how to fix it and suggest booking a call
 
-IMPORTANT:
-- Keep it conversational
-- No bullet points
-- No markdown
-- No generic marketing language
-- Make it feel like a real Loom recording
+VISUAL CUES:
+- (show results)
+- (highlight competitors)
+- (pause)
+- (scroll)
+
+STYLE:
+${styleInstruction}
 `;
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -65,7 +88,6 @@ IMPORTANT:
 
     const text = await response.text();
 
-    // Intentar parsear la respuesta
     try {
       const data = JSON.parse(text);
 
@@ -80,9 +102,9 @@ IMPORTANT:
 
       return Response.json({ script });
 
-    } catch (parseError) {
+    } catch {
       return Response.json({
-        error: "Invalid JSON from OpenAI",
+        error: "Invalid JSON",
         raw: text
       });
     }
