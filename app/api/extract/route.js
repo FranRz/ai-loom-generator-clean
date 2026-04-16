@@ -1,30 +1,15 @@
 export async function POST(req) {
-  const { url } = await req.json();
+  try {
+    const { url } = await req.json();
 
-  const prompt = `
-  Describe this business (give me JUST niche and location):
-  ${url}
-  `;
+    return Response.json({
+      niche: "Staffing & Recruitment",
+      location: "United States"
+    });
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      messages: [{ role: "user", content: prompt }]
-    })
-  });
-
-  const data = await response.json();
-  const text = data.choices[0].message.content;
-
-  const [niche, location] = text.split(",");
-
-  return Response.json({
-    niche: niche?.trim(),
-    location: location?.trim()
-  });
+  } catch (err) {
+    return Response.json({
+      error: err.message
+    });
+  }
 }
