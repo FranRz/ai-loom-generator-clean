@@ -16,7 +16,7 @@ export async function POST(req) {
       const script = `
 Hey ${person}, Francisco from EndoLead here, I wanted to quickly show you the ChatGPT search I just did to see if ${companyName} would show up if I searched for "${firstPrompt}", and as you can see, ChatGPT gives us these competitors (show results), with ${companyName} unfortunately nowhere to be found (highlight competitors), and if we look at my next prompt, I asked "${secondPrompt}" (scroll)
 
-So ${person}, this clearly tells us that ChatGPT already knows that you guys are offering a quality service, but what ChatGPT is looking at primarily when it’s deciding who to put in these recommendations is what’s called domain authority, meaning how much ChatGPT trusts your domain, ${domain}.
+And as you can see ChatGPT tells us that it should be included in this search. So ${person}, this clearly tells us that ChatGPT already knows that you guys are offering a quality service, but what ChatGPT is looking at primarily when it’s deciding who to put in these recommendations is what’s called domain authority, meaning how much ChatGPT trusts your domain, ${domain}.
 
 And as you probably know, more and more prospects are making their research and decisions based on AI search recommendations, so the fact that you’re not in the top of a search like the one I made here unfortunately means that you’re currently missing out on new business every single month right now.
 
