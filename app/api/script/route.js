@@ -22,7 +22,7 @@ And as you probably know, more and more prospects are making their research and 
 
 But the good news is that we recently finished testing and implementing a completely done-for-you AI Search Visibility System, which is designed to specifically boost your domain authority and from that increase your likelihood of making the cut in ChatGPT searches like the one I just did.
 
-So ${person}, if you’d like to get this fixed so that the people who are looking for ${niche} in ${location} on ChatGPT are going to come to you instead of your competitors moving forward, let me know, and I’d be very happy to show you exactly how we can make that happen for you with our AI Search Visibility System. We can go ahead and schedule in a meeting — does early this week or later this week work better for you? Speak soon!
+So ${person}, if you’d like to get this fixed so that the people who are looking for ${niche} in ${location} on ChatGPT are going to come to you instead of your competitors moving forward, let me know, and I’d be very happy to show you exactly how we can make that happen for you with our AI Search Visibility System. We can go ahead and schedule in a meeting — let me know which time works best for you? and we´ll make it happen. Speak soon!
 `;
 
       return Response.json({
