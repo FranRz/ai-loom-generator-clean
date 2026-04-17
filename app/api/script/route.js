@@ -4,73 +4,69 @@ export async function POST(req) {
 
     const person = name || "there";
 
-    const baseContext = `
-Website: ${url}
-Niche: ${niche}
-Location: ${location}
-Name: ${person}
+    // 🔧 Helpers
+    const companyName = extractCompanyName(url);
+    const domain = url.replace("https://", "").replace("http://", "").replace("www.", "");
+
+    const firstPrompt = `best ${niche} in ${location}`;
+    const secondPrompt = `Should ${companyName} be listed as a top ${niche} in ${location}?`;
+
+    // 🟢 SAFE MODE (Frederik script casi literal)
+    if (style === "safe") {
+      const script = `
+Hey ${person}, Francisco from EndoLead here, I wanted to quickly show you the ChatGPT search I just did to see if ${companyName} would show up if I searched for "${firstPrompt}", and as you can see, ChatGPT gives us these competitors (show results), with ${companyName} unfortunately nowhere to be found (highlight competitors), and if we look at my next prompt, I asked "${secondPrompt}" (scroll)
+
+So ${person}, this clearly tells us that ChatGPT already knows that you guys are offering a quality service, but what ChatGPT is looking at primarily when it’s deciding who to put in these recommendations is what’s called domain authority, meaning how much ChatGPT trusts your domain, ${domain}.
+
+And as you probably know, more and more prospects are making their research and decisions based on AI search recommendations, so the fact that you’re not in the top of a search like the one I made here unfortunately means that you’re currently missing out on new business every single month right now.
+
+But the good news is that we recently finished testing and implementing a completely done-for-you AI Search Visibility System, which is designed to specifically boost your domain authority and from that increase your likelihood of making the cut in ChatGPT searches like the one I just did.
+
+So ${person}, if you’d like to get this fixed so that the people who are looking for ${niche} in ${location} on ChatGPT are going to come to you instead of your competitors moving forward, let me know, and I’d be very happy to show you exactly how we can make that happen for you with our AI Search Visibility System. We can go ahead and schedule in a meeting — does early this week or later this week work better for you? Speak soon!
 `;
 
-    // 🎯 BASE STRUCTURE
+      return Response.json({
+        script,
+        ...generateGuide(url, niche, location)
+      });
+    }
+
+    // 🔥 BASE PROMPT (para AI modes)
     const basePrompt = `
 You are an elite appointment setter.
 
 Write a Loom script (60-90 sec), natural tone.
 
-${baseContext}
-
 IMPORTANT:
 - Start EXACTLY like:
 "Hey ${person}, Francisco from Endolead here — I just ran a quick ChatGPT search..."
 
-- Conversational
-- No bullet points
-- No generic marketing language
-- Sound human
+Context:
+- Website: ${url}
+- Niche: ${niche}
+- Location: ${location}
 
 STRUCTURE:
-- Show search (show results)
-- Competitors ARE showing, they are NOT (highlight competitors)
-- Say: people are going to competitors instead
-- Scroll → say they COULD be included
-- Explain: visibility / authority issue
-- Explain lost inbound leads
+- Show search
+- Competitors vs them
+- Lost opportunity
+- Domain authority explanation
+- Introduce AI Search Visibility System
+- CTA
 `;
 
-    // 🎛 STYLE VARIATIONS (con SYSTEM integrado)
     const styles = {
-      safe: `
-Introduce the system softly:
-"That’s actually something we help with through our AI Search Visibility System..."
-
-Keep it natural and low pressure.
-
-CTA:
-"If you want, I can walk you through how it works."
-`,
-
       optimized: `
-Introduce the system clearly:
-"That’s actually what we fix with our AI Search Visibility System — helping companies show up in these AI-driven searches."
-
-Add light urgency and opportunity framing.
-
-CTA:
-"If you want, I can show you exactly how it works and what it would look like for you."
+Make it persuasive but natural.
+Highlight competitors and lost opportunities.
 `,
-
       aggressive: `
-Introduce the system with impact:
-"This is exactly what we solve with our AI Search Visibility System — helping companies stop losing these opportunities and start showing up where it matters."
-
-Emphasize missed opportunities and urgency.
-
-CTA:
-"If you want, I can show you exactly how this works and how quickly we can start turning this around."
+Make it more direct and urgent.
+Emphasize missed business.
 `
     };
 
-    // 🧪 A/B MODE
+    // 🧪 A/B
     if (style === "ab") {
       const scriptA = await fetchOpenAI(basePrompt + styles.optimized);
       const scriptB = await fetchOpenAI(basePrompt + styles.aggressive);
@@ -82,9 +78,8 @@ CTA:
       });
     }
 
-    // 🎯 SINGLE MODE
-    const finalPrompt = basePrompt + (styles[style] || styles.optimized);
-    const script = await fetchOpenAI(finalPrompt);
+    // 🎯 SINGLE AI MODE
+    const script = await fetchOpenAI(basePrompt + (styles[style] || styles.optimized));
 
     return Response.json({
       script,
@@ -93,14 +88,13 @@ CTA:
 
   } catch (err) {
     return Response.json({
-      error: "Server crash",
-      message: err.message
+      error: err.message
     });
   }
 }
 
 
-// 🔧 OPENAI CALL
+// 🔧 OpenAI helper
 async function fetchOpenAI(prompt) {
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -118,42 +112,39 @@ async function fetchOpenAI(prompt) {
   });
 
   const data = await res.json();
-  return data.choices?.[0]?.message?.content || "Error generating script";
+  return data.choices?.[0]?.message?.content || "Error";
 }
 
 
-// 🎬 LOOM GUIDE
+// 🎬 Loom Guide
 function generateGuide(url, niche, location) {
   const searchQuery = `best ${niche} in ${location}`;
   const inclusionQuery = `Should ${url} be listed as a top ${niche} in ${location}?`;
 
   return {
     loomGuide: `
-STEP 1:
-Search: "${searchQuery}"
-(show results)
-
-STEP 2:
-Highlight competitors
-(highlight competitors)
-
-STEP 3:
-Pause and say they are not showing
-(pause)
-
-STEP 4:
-Search: "${inclusionQuery}"
-(scroll)
-
-STEP 5:
-Explain insight
-
-STEP 6:
-Introduce system + CTA
+STEP 1: Search "${searchQuery}"
+STEP 2: Highlight competitors
+STEP 3: Show absence
+STEP 4: Search "${inclusionQuery}"
+STEP 5: Explain insight
+STEP 6: CTA
 `,
     prompts: {
       search: searchQuery,
       inclusion: inclusionQuery
     }
   };
+}
+
+
+// 🧠 Helper para nombre empresa
+function extractCompanyName(url) {
+  try {
+    const domain = new URL(url).hostname;
+    const name = domain.replace("www.", "").split(".")[0];
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  } catch {
+    return "your company";
+  }
 }
