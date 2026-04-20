@@ -8,7 +8,7 @@ export async function POST(req) {
     const companyName = extractCompanyName(url);
     const domain = url.replace("https://", "").replace("http://", "").replace("www.", "");
 
-    const firstPrompt = `best ${niche} in ${location}`;
+    const firstPrompt = `give me 10 ${niche} in ${location}`;
     const secondPrompt = `Should ${companyName} be listed as a top ${niche} in ${location}?`;
 
     // 🟢 SAFE MODE (Frederik script casi literal)
