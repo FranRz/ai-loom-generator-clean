@@ -11,13 +11,18 @@ export default function Home() {
   const [prompts, setPrompts] = useState(null);
   const [permissionDM, setPermissionDM] = useState("");
 
-  // 🔥 Generador de Permission DM (seguro)
-  const generatePermissionDM = (name, niche) => {
+  // 🔥 NUEVO: Permission DM con dominio
+  const generatePermissionDM = (name, niche, url) => {
+    const domain = url
+      .replace("https://", "")
+      .replace("http://", "")
+      .split("/")[0];
+
     return `Hey ${name},
 
-I was looking into how companies in the ${niche} space are showing up on ChatGPT, and noticed some interesting patterns in what gets recommended.
+I was looking into how companies like ${domain} are showing up in the ${niche} space on ChatGPT, and noticed some interesting patterns in what gets recommended.
 
-Happy to send you a quick Loom showing what I found and how it might apply to your space — just let me know 👍`;
+Happy to send you a quick Loom showing what I found and how it might apply — just let me know 👍`;
   };
 
   const generate = async () => {
@@ -29,21 +34,17 @@ Happy to send you a quick Loom showing what I found and how it might apply to yo
     setLoading(true);
 
     try {
-      // 🔹 Step 1: Analyze website
+      // 🔹 Step 1: Analyze
       const res1 = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
       });
 
-      if (!res1.ok) throw new Error("Analyze failed");
-
       const data1 = await res1.json();
-      console.log("data1:", data1);
-
       const nicheSafe = data1?.niche || "your industry";
 
-      // 🔹 Step 2: Generate Loom scripts
+      // 🔹 Step 2: Generate scripts
       const res2 = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -54,17 +55,14 @@ Happy to send you a quick Loom showing what I found and how it might apply to yo
         }),
       });
 
-      if (!res2.ok) throw new Error("Generate failed");
-
       const data2 = await res2.json();
-      console.log("data2:", data2);
 
       setScriptA(data2?.scriptA || "");
       setScriptB(data2?.scriptB || "");
       setPrompts(data2?.prompts || null);
 
-      // 🔥 NUEVO: Permission DM
-      const permission = generatePermissionDM(name, nicheSafe);
+      // 🔥 Permission DM
+      const permission = generatePermissionDM(name, nicheSafe, url);
       setPermissionDM(permission);
 
     } catch (err) {
@@ -83,6 +81,9 @@ Happy to send you a quick Loom showing what I found and how it might apply to yo
   return (
     <main style={{ padding: 40 }}>
       <h1>AI Loom Generator</h1>
+
+      <p><strong>Recommended flow:</strong></p>
+      <p>1. Send permission DM → 2. Wait reply → 3. Send Loom → 4. Follow up</p>
 
       <input
         placeholder="Prospect Name"
@@ -104,20 +105,20 @@ Happy to send you a quick Loom showing what I found and how it might apply to yo
 
       <br /><br />
 
-      {/* 🔥 Step 1: Permission Message */}
+      {/* STEP 1 */}
       {permissionDM && (
         <>
-          <h3>Step 1: Permission Message</h3>
+          <h3>Step 1: Ask for Permission</h3>
           <pre>{permissionDM}</pre>
           <button onClick={() => copy(permissionDM)}>Copy DM</button>
           <br /><br />
         </>
       )}
 
-      {/* Step 2: Loom Scripts */}
+      {/* STEP 2 */}
       {scriptA && (
         <>
-          <h3>Script A</h3>
+          <h3>Step 2: Send Loom (Script A)</h3>
           <pre>{scriptA}</pre>
           <button onClick={() => copy(scriptA)}>Copy</button>
           <br /><br />
@@ -126,17 +127,17 @@ Happy to send you a quick Loom showing what I found and how it might apply to yo
 
       {scriptB && (
         <>
-          <h3>Script B</h3>
+          <h3>Alternative Script</h3>
           <pre>{scriptB}</pre>
           <button onClick={() => copy(scriptB)}>Copy</button>
           <br /><br />
         </>
       )}
 
-      {/* Step 3: Prompts */}
+      {/* STEP 3 */}
       {prompts && (
         <>
-          <h3>Prompts</h3>
+          <h3>Step 3: ChatGPT Prompts</h3>
           <pre>{JSON.stringify(prompts, null, 2)}</pre>
         </>
       )}
