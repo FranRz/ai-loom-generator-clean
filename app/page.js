@@ -11,8 +11,8 @@ export default function Home() {
   const [prompts, setPrompts] = useState(null);
   const [permissionDM, setPermissionDM] = useState("");
 
-  // 👉 NUEVO: Generador de mensaje de permiso
-  const generatePermissionDM = (name, niche, url) => {
+  // 🔥 Generador de Permission DM (seguro)
+  const generatePermissionDM = (name, niche) => {
     return `Hey ${name},
 
 I was looking into how companies in the ${niche} space are showing up on ChatGPT, and noticed some interesting patterns in what gets recommended.
@@ -21,37 +21,50 @@ Happy to send you a quick Loom showing what I found and how it might apply to yo
   };
 
   const generate = async () => {
-    if (!name || !url) return alert("Fill everything");
+    if (!name || !url) {
+      alert("Fill everything");
+      return;
+    }
 
     setLoading(true);
 
     try {
-      // 🔹 Step 1: Get niche
+      // 🔹 Step 1: Analyze website
       const res1 = await fetch("/api/analyze", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
       });
 
-      const data1 = await res1.json();
+      if (!res1.ok) throw new Error("Analyze failed");
 
-      // 🔹 Step 2: Generate scripts
+      const data1 = await res1.json();
+      console.log("data1:", data1);
+
+      const nicheSafe = data1?.niche || "your industry";
+
+      // 🔹 Step 2: Generate Loom scripts
       const res2 = await fetch("/api/generate", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
           url,
-          niche: data1.niche,
+          niche: nicheSafe,
         }),
       });
 
+      if (!res2.ok) throw new Error("Generate failed");
+
       const data2 = await res2.json();
+      console.log("data2:", data2);
 
-      setScriptA(data2.scriptA);
-      setScriptB(data2.scriptB);
-      setPrompts(data2.prompts);
+      setScriptA(data2?.scriptA || "");
+      setScriptB(data2?.scriptB || "");
+      setPrompts(data2?.prompts || null);
 
-      // 👉 NUEVO: Generar Permission DM
-      const permission = generatePermissionDM(name, data1.niche, url);
+      // 🔥 NUEVO: Permission DM
+      const permission = generatePermissionDM(name, nicheSafe);
       setPermissionDM(permission);
 
     } catch (err) {
@@ -76,16 +89,14 @@ Happy to send you a quick Loom showing what I found and how it might apply to yo
         value={name}
         onChange={(e) => setName(e.target.value)}
       />
-      <br />
-      <br />
+      <br /><br />
 
       <input
         placeholder="Website URL"
         value={url}
         onChange={(e) => setUrl(e.target.value)}
       />
-      <br />
-      <br />
+      <br /><br />
 
       <button onClick={generate} disabled={loading}>
         {loading ? "Generating..." : "Generate"}
@@ -93,7 +104,7 @@ Happy to send you a quick Loom showing what I found and how it might apply to yo
 
       <br /><br />
 
-      {/* 🔥 NUEVO BLOQUE */}
+      {/* 🔥 Step 1: Permission Message */}
       {permissionDM && (
         <>
           <h3>Step 1: Permission Message</h3>
@@ -103,6 +114,7 @@ Happy to send you a quick Loom showing what I found and how it might apply to yo
         </>
       )}
 
+      {/* Step 2: Loom Scripts */}
       {scriptA && (
         <>
           <h3>Script A</h3>
@@ -121,6 +133,7 @@ Happy to send you a quick Loom showing what I found and how it might apply to yo
         </>
       )}
 
+      {/* Step 3: Prompts */}
       {prompts && (
         <>
           <h3>Prompts</h3>
